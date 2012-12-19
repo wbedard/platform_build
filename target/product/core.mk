@@ -22,6 +22,7 @@ PRODUCT_PROPERTY_OVERRIDES := \
     ro.config.notification_sound=OnTheHunt.ogg \
     ro.config.alarm_alert=Alarm_Classic.ogg
 
+# BEGIN privacy-added: PDroid
 PRODUCT_PACKAGES += \
     ApplicationsProvider \
     BackupRestoreConfirmation \
@@ -36,6 +37,7 @@ PRODUCT_PACKAGES += \
     Home \
     KeyChain \
     MediaProvider \
+    PDroid \
     PackageInstaller \
     PhotoTable \
     PicoTts \
@@ -133,6 +135,7 @@ PRODUCT_PACKAGES += \
     zoneinfo.dat \
     zoneinfo.idx \
     zoneinfo.version
+# END privacy-added: PDroid
 
 PRODUCT_COPY_FILES += \
     system/core/rootdir/init.usb.rc:root/init.usb.rc \
