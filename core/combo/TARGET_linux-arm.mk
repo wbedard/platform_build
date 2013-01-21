@@ -65,23 +65,51 @@ ifneq ($(wildcard $(TARGET_TOOLS_PREFIX)gcc$(HOST_EXECUTABLE_SUFFIX)),)
 endif
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
+ifeq ($(TARGET_USE_O3),true)
+    TARGET_arm_CFLAGS :=    -O3 \
+                            -fomit-frame-pointer \
+                            -fstrict-aliasing    \
+                            -funswitch-loops
+else
+    TARGET_arm_CFLAGS :=    -Os \
+                            -fomit-frame-pointer \
+                            -fstrict-aliasing    \
+                            -funswitch-loops
+endif
 
-TARGET_arm_CFLAGS :=    -O3 \
-                        -fomit-frame-pointer \
-                        -fstrict-aliasing    \
-                        -funswitch-loops
-
+ifeq ($(TARGET_USE_GRAPHITE),true)
+    TARGET_arm_CFLAGS :=    -floop-interchange \
+                           -floop-strip-mine \
+                           -floop-block \
+                           -ffast-math \
+                           -funsafe-loop-optimizations
+endif
 # Modules can choose to compile some source as thumb. As
 # non-thumb enabled targets are supported, this is treated
 # as a 'hint'. If thumb is not enabled, these files are just
 # compiled as ARM.
 ifeq ($(ARCH_ARM_HAVE_THUMB_SUPPORT),true)
-TARGET_thumb_CFLAGS :=  -mthumb \
-                        -O3 \
-                        -fomit-frame-pointer \
-                        -fno-strict-aliasing
+    ifeq ($(TARGET_USE_O3),true)
+    TARGET_thumb_CFLAGS :=  -mthumb \
+                            -O3 \
+                            -fomit-frame-pointer \
+                            -fno-strict-aliasing
+    else
+    TARGET_thumb_CFLAGS :=  -mthumb \
+                            -O2 \
+                            -fomit-frame-pointer \
+                            -fno-strict-aliasing
+    endif
 else
-TARGET_thumb_CFLAGS := $(TARGET_arm_CFLAGS)
+    TARGET_thumb_CFLAGS := $(TARGET_arm_CFLAGS)
+endif
+
+ifeq ($(TARGET_USE_GRAPHITE),true)
+    TARGET_thumb_CFLAGS:=    -floop-interchange \
+                             -floop-strip-mine \
+                             -floop-block \
+                             -ffast-math \
+                             -funsafe-loop-optimizations
 endif
 
 # Set FORCE_ARM_DEBUGGING to "true" in your buildspec.mk
