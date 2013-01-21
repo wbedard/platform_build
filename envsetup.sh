@@ -233,11 +233,26 @@ function settitle()
         local product=$TARGET_PRODUCT
         local variant=$TARGET_BUILD_VARIANT
         local apps=$TARGET_BUILD_APPS
-        if [ -z "$apps" ]; then
-            export PROMPT_COMMAND="echo -ne \"\033]0;[${arch}-${product}-${variant}] ${USER}@${HOSTNAME}: ${PWD}\007\""
-        else
-            export PROMPT_COMMAND="echo -ne \"\033]0;[$arch $apps $variant] ${USER}@${HOSTNAME}: ${PWD}\007\""
+        if [ -z "$PROMPT_COMMAND"  ]; then
+            # No prompts
+            PROMPT_COMMAND="echo -ne \"\033]0;${USER}@${HOSTNAME}: ${PWD}\007\""
+        elif [ -z "$(echo $PROMPT_COMMAND | grep '033]0;')" ]; then
+            # Prompts exist, but no hardstatus
+            PROMPT_COMMAND="echo -ne \"\033]0;${USER}@${HOSTNAME}: ${PWD}\007\";${PROMPT_COMMAND}"
         fi
+        if [ ! -z "$ANDROID_PROMPT_PREFIX" ]; then
+            PROMPT_COMMAND=$(echo $PROMPT_COMMAND | sed -e 's/$ANDROID_PROMPT_PREFIX //g')
+        fi
+
+        if [ -z "$apps" ]; then
+            ANDROID_PROMPT_PREFIX="[${arch}-${product}-${variant}]"
+        else
+            ANDROID_PROMPT_PREFIX="[$arch $apps $variant]"
+        fi
+        export ANDROID_PROMPT_PREFIX
+
+        # Inject build data into hardstatus
+        export PROMPT_COMMAND=$(echo $PROMPT_COMMAND | sed -e 's/\\033]0;\(.*\)\\007/\\033]0;$ANDROID_PROMPT_PREFIX \1\\007/g')
     fi
 }
 
@@ -479,7 +494,6 @@ function brunch()
 {
     breakfast $*
     if [ $? -eq 0 ]; then
-        export CM_FAST_BUILD=1
         mka bacon
     else
         echo "No such item in brunch menu. Try 'breakfast'"
@@ -673,6 +687,8 @@ function eat()
             done
             echo "Device Found.."
         fi
+    if (adb shell cat /system/build.prop | grep -q "ro.cm.device=$CM_BUILD");
+    then
         # if adbd isn't root we can't write to /cache/recovery/
         adb root
         sleep 1
@@ -695,6 +711,9 @@ EOF
         return 1
     fi
     return $?
+    else
+        echo "The connected device does not appear to be $CM_BUILD, run away!"
+    fi
 }
 
 function omnom
@@ -1755,6 +1774,8 @@ function dopush()
         echo "Device Found."
     fi
 
+    if (adb shell cat /system/build.prop | grep -q "ro.cm.device=$CM_BUILD");
+    then
     adb root &> /dev/null
     sleep 0.3
     adb wait-for-device &> /dev/null
@@ -1793,6 +1814,9 @@ function dopush()
     done
     rm -f $OUT/.log
     return 0
+    else
+        echo "The connected device does not appear to be $CM_BUILD, run away!"
+    fi
 }
 
 alias mmp='dopush mm'
